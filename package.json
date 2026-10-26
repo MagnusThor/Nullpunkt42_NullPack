@@ -10,6 +10,7 @@
     "build:loader": "esbuild src/loader.ts --bundle --format=esm --target=esnext --outfile=output/loader.js",
     "pack": "tsx src/pack.ts ./assets ./output/demo.bin",
     "build": "npm run build:runner && npm run build:demo && npm run build:loader && npm run pack",
+    "serve": "python -m http.server -d output 8000",
     "typecheck": "tsc --noEmit"
   },
   "author": "",

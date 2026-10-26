@@ -2,5 +2,6 @@
   "assetsDir": "./assets",
   "output": "./dist/demo.bin",
   "runnerFile": "demo.js",
-  "fullscreenOnStart": true
+  "fullscreenOnStart": true,
+  "png":true
 }

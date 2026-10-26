@@ -1,10 +1,29 @@
 // src/loader.ts
+function extractPngPayload(buf) {
+  const u8 = new Uint8Array(buf);
+  const isPng = u8.length > 8 && u8[0] === 137 && u8[1] === 80 && u8[2] === 78 && u8[3] === 71;
+  if (!isPng) return buf;
+  const dv = new DataView(buf);
+  let p = 8;
+  while (p + 12 <= u8.length) {
+    const len = dv.getUint32(p);
+    const type = String.fromCharCode(u8[p + 4], u8[p + 5], u8[p + 6], u8[p + 7]);
+    if (type === "nuPK") {
+      const key = u8[p + 8];
+      const data = u8.slice(p + 9, p + 8 + len);
+      if (key) for (let i = 0; i < data.length; i++) data[i] ^= key;
+      return data.buffer;
+    }
+    p += 12 + len;
+  }
+  throw new Error("PNG container has no 'nuPK' payload chunk");
+}
 async function loadAssetBundle(bundleUrl, options = {}) {
   const response = await fetch(bundleUrl);
   if (!response.ok) {
     throw new Error(`Failed to download bundle: ${response.status} ${response.statusText}`);
   }
-  const arrayBuffer = await response.arrayBuffer();
+  const arrayBuffer = extractPngPayload(await response.arrayBuffer());
   const view = new DataView(arrayBuffer);
   const magic = String.fromCharCode(
     view.getUint8(0),

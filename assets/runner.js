@@ -26,7 +26,7 @@ async function runDemo(bundle) {
     <div style="max-width: 960px; margin: 0 auto;">
       <div style="display:flex; justify-content:space-between; align-items:center; border-bottom: 1px solid #27272a; padding-bottom: 16px; margin-bottom: 24px;">
         <h1 style="color: #60a5fa; margin: 0; font-size: 1.4rem; letter-spacing: -0.02em;">
-          DEMO RUNNER // VFS INSPECTOR
+          Nullpunkt42_NullPack // VFS INSPECTOR
         </h1>
         <span style="background: #1e293b; color: #94a3b8; padding: 4px 10px; border-radius: 9999px; font-size: 11px;">
           Created: ${new Date(bundle.meta.created).toLocaleTimeString()}

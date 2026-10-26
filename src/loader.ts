@@ -7,6 +7,32 @@ import { ResolvedAsset } from "./interface/ResolvedAsset.js";
 import { LoadBundleOptions } from "./interface/LoadBundleOptions.js";
 
 
+/**
+ * Single-file mode: if the downloaded bytes are a PNG (PNG/HTML polyglot made by
+ * pack.ts with "png" in settings.json), pull the bundle out of its 'nuPK' chunk.
+ * Plain demo.bin files are returned untouched.
+ */
+function extractPngPayload(buf: ArrayBuffer): ArrayBuffer {
+  const u8 = new Uint8Array(buf);
+  const isPng = u8.length > 8 && u8[0] === 0x89 && u8[1] === 0x50 && u8[2] === 0x4E && u8[3] === 0x47;
+  if (!isPng) return buf;
+
+  const dv = new DataView(buf);
+  let p = 8;
+  while (p + 12 <= u8.length) {
+    const len = dv.getUint32(p); // PNG is big-endian
+    const type = String.fromCharCode(u8[p + 4], u8[p + 5], u8[p + 6], u8[p + 7]);
+    if (type === 'nuPK') {
+      const key = u8[p + 8];
+      const data = u8.slice(p + 9, p + 8 + len); // copy, owns its own buffer
+      if (key) for (let i = 0; i < data.length; i++) data[i] ^= key;
+      return data.buffer as ArrayBuffer;
+    }
+    p += 12 + len;
+  }
+  throw new Error("PNG container has no 'nuPK' payload chunk");
+}
+
 export async function loadAssetBundle(
   bundleUrl: string,
   options: LoadBundleOptions = {}
@@ -16,7 +42,7 @@ export async function loadAssetBundle(
     throw new Error(`Failed to download bundle: ${response.status} ${response.statusText}`);
   }
 
-  const arrayBuffer = await response.arrayBuffer();
+  const arrayBuffer = extractPngPayload(await response.arrayBuffer());
   const view = new DataView(arrayBuffer);
 
   const magic = String.fromCharCode(
@@ -209,4 +235,4 @@ export async function loadAssetBundle(
   }
 
   return bundle;
-}
+  }
