@@ -1,0 +1,23 @@
+{
+  "name": "Nullpunkt42_NullPack",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "type": "module",
+ "scripts": {
+    "build:runner": "esbuild src/runner.ts --bundle --format=esm --target=esnext --outfile=assets/runner.js",
+    "build:demo": "esbuild src/demo.ts --bundle --format=esm --target=esnext --outfile=assets/demo.js",
+    "build:loader": "esbuild src/loader.ts --bundle --format=esm --target=esnext --outfile=output/loader.js",
+    "pack": "tsx src/pack.ts ./assets ./output/demo.bin",
+    "build": "npm run build:runner && npm run build:demo && npm run build:loader && npm run pack",
+    "typecheck": "tsc --noEmit"
+  },
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@types/node": "^26.6.5",
+    "esbuild": "^0.28.2",
+    "tsx": "^4.7.1",
+    "typescript": "^5.4.2"
+  }
+}

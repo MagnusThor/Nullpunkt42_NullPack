@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Demoscene Web Runner</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    * { box-sizing: border-box; }
+    html, body {
+      margin: 0; padding: 0; width: 100vw; height: 100vh; overflow: hidden;
+      background-color: #000; display: flex; align-items: center;
+      justify-content: center; user-select: none;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    }
+
+    #launcher-ui {
+      display: flex; flex-direction: column; align-items: center; gap: 20px;
+      transition: opacity 0.4s ease; z-index: 9999;
+    }
+
+    /* Play Button */
+    .play-btn {
+      position: relative; width: 96px; height: 96px;
+      border: 2px solid rgba(255, 255, 255, 0.2); border-radius: 50%;
+      background: rgba(255, 255, 255, 0.03); cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+      box-shadow: 0 0 20px rgba(0, 0, 0, 0.8);
+    }
+    .play-btn svg {
+      width: 32px; height: 32px; fill: #fff; margin-left: 6px;
+      transition: transform 0.2s ease;
+    }
+    .play-btn:hover {
+      border-color: #38bdf8; background: rgba(56, 189, 248, 0.1);
+      box-shadow: 0 0 35px rgba(56, 189, 248, 0.45); transform: scale(1.06);
+    }
+
+    /* Spinner */
+    .spinner {
+      width: 48px; height: 48px; border: 3px solid rgba(255,255,255,0.1);
+      border-radius: 50%; border-top-color: #38bdf8;
+      animation: spin 1s ease-in-out infinite;
+      display: none; /* Hidden by default */
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .title { color: #64748b; font-size: 12px; letter-spacing: 0.25em; text-transform: uppercase; }
+    .status { color: #38bdf8; font-size: 13px; min-height: 18px; }
+  </style>
+</head>
+<body>
+
+  <div id="launcher-ui">
+    <button id="start-btn" class="play-btn" aria-label="Launch Demo">
+      <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+    </button>
+    <div id="spinner" class="spinner"></div>
+    <div class="title">Nullpunkt 42</div>
+    <div id="status" class="status"></div>
+  </div>
+
+  <script type="module">
+    import { loadAssetBundle } from './loader.js';
+
+    const startBtn = document.getElementById('start-btn');
+    const spinner = document.getElementById('spinner');
+    const launcherUi = document.getElementById('launcher-ui');
+    const statusText = document.getElementById('status');
+
+    async function launch() {
+      // Transition UI to loading state
+      startBtn.style.display = 'none';
+      spinner.style.display = 'block';
+      statusText.innerText = 'Initializing Web Audio & Fullscreen...';
+
+      try {
+        if (!document.fullscreenElement) await document.documentElement.requestFullscreen().catch(() => {});
+      } catch (err) {}
+
+      const AudioCtx = window.AudioContext || window.webkitAudioContext;
+      if (AudioCtx) {
+        const audioCtx = new AudioCtx();
+        if (audioCtx.state === 'suspended') await audioCtx.resume();
+      }
+
+      statusText.innerText = 'Unpacking virtual filesystem...';
+
+      try {
+        const bundle = await loadAssetBundle('./demo.bin', {
+          interceptFetch: true, fetchPrefix: 'assets/'
+        });
+
+        statusText.innerText = 'Compiling WebGL shaders...';
+
+        // Wait a tiny frame so the UI text can update before WebGL locks the main thread
+        await new Promise(r => setTimeout(r, 50)); 
+        
+        await bundle.run();
+
+        // Fade out
+        launcherUi.style.opacity = '0';
+        setTimeout(() => launcherUi.remove(), 400);
+
+      } catch (error) {
+        console.error(error);
+        statusText.style.color = '#ef4444';
+        statusText.innerText = error.message;
+        spinner.style.display = 'none';
+        startBtn.style.display = 'flex';
+      }
+    }
+
+    startBtn.addEventListener('click', launch);
+  </script>
+</body>
+</html>
